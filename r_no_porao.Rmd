@@ -1,0 +1,261 @@
+---
+title: "magrittr + dplyr + tidyr"
+author: "Vitor Aguiar"
+date: ""
+output: 
+    ioslides_presentation:
+      widescreen: true
+      smaller: true
+---
+
+## magrittr
+
+## magrittr {.flexbox .vcenter}
+
+<big style="font-size:10em"> *%>%* </big>
+
+[Ceci n'est pas une pipe](http://uploads7.wikiart.org/images/rene-magritte/the-treachery-of-images-this-is-not-a-pipe-1948%282%29.jpg)
+
+## magrittr operators {.flexbox .vcenter}
+
+<big style="font-size:2em"> *%>%* </big>
+
+<big style="font-size:2em"> *%T>%* </big>
+
+<big style="font-size:2em"> *%$%* </big>
+
+<big style="font-size:2em"> *%<>%* </big>
+
+## pipe usage
+
+```{r eval=FALSE}
+f(x)
+
+# is the same as:
+
+x %>% f()
+
+## with two arguments:
+f(x, y)
+
+# is the same as:
+x %>% f(y)
+
+## if you don't want the input to be used as 1st argument:
+f(y, x)
+
+# is the same as:
+x %>% f(y, .)
+
+```
+
+## {}
+
+<big style="font-size:5em"> *dplyr* </big>
+(aka plyr for data frames)
+
+## dplyr verbs {.flexbox .vcenter}
+
+filter
+
+slice
+
+group_by
+
+arrange
+
+select
+
+summarise
+
+mutate
+
+## {}
+
+We'll use the [gapminder](https://www.youtube.com/watch?v=jbkSRLYSojo) data for a demo
+
+```{r}
+library(gapminder)
+
+str(gapminder)
+```
+
+## {}
+
+```{r message=FALSE}
+library(dplyr)
+```
+
+```{r, comment=NA}
+gapminder <- tbl_df(gapminder)
+
+gapminder
+```
+
+## count
+
+```{r, comment=NA}
+gapminder %>% count(country)
+```
+
+## filter and select
+
+```{r, comment=NA}
+gapminder %>%
+  filter(country == "Brazil", year >= 1980) %>%
+  select(year, pop, lifeExp, gdpPercap)
+```
+
+## arrange
+
+```{r, comment=NA}
+gapminder %>%
+  arrange(lifeExp) %>%
+  slice(1:10)
+```
+
+## arrange by multiple variables
+
+```{r, comment=NA}
+gapminder %>%
+  arrange(desc(pop), gdpPercap, lifeExp)
+```
+
+## group_by + summarise
+
+```{r, comment=NA}
+gapminder %>%
+  group_by(continent) %>%
+  summarise(avg_gdp = mean(gdpPercap))
+```
+
+## group_by + summarise: multiple grouping variables
+
+```{r, comment=NA}
+gapminder %>%
+  group_by(continent, year) %>%
+  summarise(avg_gdp = mean(gdpPercap))
+```
+
+## summarise: multiple variables
+
+```{r, comment=NA}
+gapminder %>%
+  group_by(continent) %>%
+  summarise_each(funs(mean), lifeExp, gdpPercap, pop)
+```
+
+## summarise: mutiple function & multiple variables
+
+```{r, comment=NA}
+gapminder %>%
+  group_by(continent) %>%
+  summarise_each(funs(mean, sd), lifeExp, gdpPercap)
+```
+
+## mutate
+
+```{r, comment=NA}
+gapminder %>% mutate(total_gdp = gdpPercap * pop)
+```
+
+## mutate_each
+
+```{r, comment=NA}
+gapminder %>% 
+  mutate_each(funs(min_rank), lifeExp, gdpPercap, pop)
+```
+
+## data %>% plot
+
+```{r, fig.width=6, fig.height=3, fig.align="center"}
+library(ggplot2)
+
+gapminder %>%
+  mutate(total_gdp = gdpPercap * pop) %>% 
+  group_by(continent, year) %>%
+  summarise(total_gdp = sum(total_gdp)) %>%
+  ggplot(data = ., aes(x = year, y = total_gdp, color = continent)) + geom_line()
+```
+
+## {}
+
+<big style="font-size:5em"> *tidyr* </big>
+
+## Plant height data measured in 3 different months
+
+```{r echo=FALSE, comment=NA}
+plant_height <- data_frame(individual = paste(sample(1:20), 
+                                              c(rep("SP", 10), rep("MG", 10)),
+                                              sep = "_"),
+                         "2015/01/01" = rnorm(20, 15, sd = 1),
+                         "2015/02/01" = rnorm(20, 16, sd = 1.2),
+                         "2015/03/01" = rnorm(20, 21, sd = 1.5))
+
+plant_height
+```
+
+## tidyr verbs {.flexbox .vcenter}
+
+gather 
+
+spread
+
+separate
+
+unite
+
+extract
+
+## gather: 'long' or 'narrow' format
+
+```{r message=FALSE, comment=NA}
+library(magrittr)
+library(tidyr)
+
+plant_height %<>% gather(key=date, value=height, 2:4)
+
+plant_height
+```
+
+## spread
+
+```{r, comment=NA}
+plant_height %>% spread(date, height)
+```
+
+## separate
+
+```{r, comment=NA}
+plant_height %<>% 
+  separate(individual, into = c("id_number", "state")) %>%
+  mutate(id_number = as.numeric(id_number)) %>%
+  arrange(id_number, state)
+
+plant_height
+```
+
+## extract
+
+```{r, comment=NA}
+plant_height %<>% 
+  extract(date, c("year", "month", "day"), "(\\d+)/(\\d+)/(\\d+)")
+
+plant_height
+```
+
+## unite 
+
+```{r, comment=NA}
+plant_height %>% unite(date, year:day, sep = "/")
+```
+
+## transpose data frame
+
+```{r, comment=NA}
+plant_height %>% spread(id_number, height)
+```
+
+## Data wrangling cheat sheet
+
+[Data manipulation cheat sheet](http://www.rstudio.com/wp-content/uploads/2015/02/data-wrangling-cheatsheet.pdf)
