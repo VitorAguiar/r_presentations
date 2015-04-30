@@ -160,7 +160,7 @@ gapminder %>%
   summarise_each(funs(mean), lifeExp, gdpPercap, pop)
 ```
 
-summarise: mutiple function & multiple variables
+summarise: mutiple functions & multiple variables
 ======================================================
 
 ```{r}
